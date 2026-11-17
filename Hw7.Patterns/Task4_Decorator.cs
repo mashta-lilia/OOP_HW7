@@ -9,13 +9,10 @@ namespace Hw7.Patterns.Decorator;
 // "Component"
 public abstract class ChristmasTree
 {
-	/// <summary>Опис ялинки разом з усіма прикрасами.</summary>
 	public abstract string Describe();
 
-	/// <summary>Чи може ялинка світитися (є хоча б одна гірлянда).</summary>
 	public abstract bool CanGlow { get; }
 
-	/// <summary>Увімкнути світло. Без гірлянди ялинка не світиться.</summary>
 	public abstract void Glow();
 }
 
@@ -36,7 +33,6 @@ public class FirTree : ChristmasTree
 	public override void Glow() => Console.WriteLine("  Ялинка не світиться: на ній немає гірлянди.");
 }
 
-// "Decorator" — за замовчуванням передає все ялинці, яку обгортає
 public abstract class TreeDecorator : ChristmasTree
 {
 	private readonly ChristmasTree _tree;
@@ -53,7 +49,6 @@ public abstract class TreeDecorator : ChristmasTree
 	public override void Glow() => _tree.Glow();
 }
 
-// "ConcreteDecoratorA" — прикраси: додають стан (поля)
 public class Ornaments : TreeDecorator
 {
 	private readonly string _kind;
@@ -71,7 +66,6 @@ public class Ornaments : TreeDecorator
 	public override string Describe() => $"{base.Describe()} + {_kind} ({_count} шт., {_color})";
 }
 
-// "ConcreteDecoratorB" — гірлянда: додає поведінку (метод Glow)
 public class Garland : TreeDecorator
 {
 	private readonly string _color;
@@ -88,7 +82,6 @@ public class Garland : TreeDecorator
 
 	public override void Glow()
 	{
-		// Якщо всередині вже є гірлянда, вона теж світиться.
 		if (base.CanGlow)
 		{
 			base.Glow();
@@ -98,26 +91,48 @@ public class Garland : TreeDecorator
 	}
 }
 
+public static class RandomDecorator
+{
+	private static readonly Random Rnd = new();
+
+	private static readonly string[] Kinds = { "кульки", "шишки", "зірочки", "бантики", "сніжинки" };
+	private static readonly string[] Colors = { "червоні", "золоті", "срібні", "сині", "білі" };
+	private static readonly string[] GarlandColors = { "біла", "синя", "різнокольорова", "жовта" };
+
+	public static ChristmasTree Decorate(ChristmasTree tree)
+	{
+		int layers = Rnd.Next(0, 5);
+
+		for (int i = 0; i < layers; i++)
+		{
+			if (Rnd.Next(2) == 0)
+			{
+				tree = new Ornaments(
+					tree,
+					Kinds[Rnd.Next(Kinds.Length)],
+					Rnd.Next(5, 31),
+					Colors[Rnd.Next(Colors.Length)]);
+			}
+			else
+			{
+				tree = new Garland(tree, GarlandColors[Rnd.Next(GarlandColors.Length)]);
+			}
+		}
+
+		return tree;
+	}
+}
+
 public static class DecoratorDemo
 {
 	public static void Run()
 	{
-		ChristmasTree plain = new FirTree(1.8);
-
-		ChristmasTree withToys = new Ornaments(plain, "кульки", 20, "червоні");
-
-		ChristmasTree festive = new Garland(
-			new Ornaments(
-				new Ornaments(new FirTree(2.2), "кульки", 30, "золоті"),
-				"шишки", 10, "срібні"),
-			"різнокольорова");
-
-		ChristmasTree twoGarlands = new Garland(new Garland(new FirTree(1.5), "біла"), "синя");
-
-		foreach (ChristmasTree tree in new[] { plain, withToys, festive, twoGarlands })
+		for (int i = 1; i <= 3; i++)
 		{
-			Console.WriteLine(tree.Describe());
+			ChristmasTree tree = RandomDecorator.Decorate(new FirTree(1.5 + i * 0.3));
+			Console.WriteLine($"Ялинка №{i}: {tree.Describe()}");
 			tree.Glow();
+			Console.WriteLine();
 		}
 	}
 }
